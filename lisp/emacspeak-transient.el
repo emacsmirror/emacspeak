@@ -89,32 +89,32 @@
 
 (eval-when-compile (require 'cl-lib))
 (cl-declaim  (optimize  (safety 0) (speed 3)))
-(require 'emacspeak-preamble)
+;; (require 'emacspeak-preamble)
 (require 'derived)
 (eval-when-compile (require 'transient nil 'noerror))
 ;;}}}
 ;;{{{Map Faces:
 
-(voice-setup-add-map
- '(
-   (transient-separator  'inaudible)
-   (transient-argument voice-animate)
-   (transient-disabled-suffix inaudible)
-   (transient-enabled-suffix voice-brighten)
-   (transient-heading voice-lighten)
-   (transient-inactive-argument inaudible)
-   (transient-inactive-value inaudible)
-   (transient-key voice-animate)
-   (transient-mismatched-key voice-monotone-extra)
-   (transient-nonstandard-key voice-monotone-extra)
-   (transient-unreachable voice-monotone-extra)
-   (transient-unreachable-key voice-monotone-extra)
-   (transient-value voice-brighten)
-   (transient-red voice-bolden)
-   (transient-blue voice-lighten)
-   (transient-amaranth voice-animate)
-   (transient-pink voice-bolden-medium)
-   (transient-teal voice-lighten-medium)))
+;; (voice-setup-add-map
+;;  '(
+;;    (transient-separator  'inaudible)
+;;    (transient-argument voice-animate)
+;;    (transient-disabled-suffix inaudible)
+;;    (transient-enabled-suffix voice-brighten)
+;;    (transient-heading voice-lighten)
+;;    (transient-inactive-argument inaudible)
+;;    (transient-inactive-value inaudible)
+;;    (transient-key voice-animate)
+;;    (transient-mismatched-key voice-monotone-extra)
+;;    (transient-nonstandard-key voice-monotone-extra)
+;;    (transient-unreachable voice-monotone-extra)
+;;    (transient-unreachable-key voice-monotone-extra)
+;;    (transient-value voice-brighten)
+;;    (transient-red voice-bolden)
+;;    (transient-blue voice-lighten)
+;;    (transient-amaranth voice-animate)
+;;    (transient-pink voice-bolden-medium)
+;;    (transient-teal voice-lighten-medium)))
 
 ;;}}}
 ;;{{{ Advice Interactive Commands:
@@ -122,16 +122,19 @@
 (defadvice transient-toggle-common (after emacspeak pre act comp)
   "speak."
   (cl-declare (special transient-show-common-commands))
-  (when (ems-interactive-p)
-    (dtk-stop 'all)
-    (emacspeak-auditory-icon
-     (if transient-show-common-commands 'on 'off))))
+  ;; (when (called-interactively-p 'any)
+  ;;   (dtk-stop 'all)
+  ;;   (emacspeak-auditory-icon
+  ;;   (if transient-show-common-commands 'on 'off))))
+  (message "-- advice transient-toggle-common"))
 
 (defadvice transient-resume (after emacspeak pre act comp)
   "speak."
-  (when (ems-interactive-p)
-    (dtk-stop 'all)
-    (emacspeak-auditory-icon 'open-object)))
+  ;; (when (called-interactively-p 'any)
+  ;;   (message "-- advice transient-toggle-common")
+  ;;   (dtk-stop 'all)
+  ;;   (emacspeak-auditory-icon 'open-object)))
+  (message "-- advice transient-resume"))
 
 (cl-loop
  for f in
@@ -140,11 +143,13 @@
  (eval
   `(defadvice ,f (after emacspeak pre act comp)
      "speak."
-     (when (ems-interactive-p)
-       (dtk-stop 'all)
-       (emacspeak-auditory-icon 'close-object)
+     (when (called-interactively-p 'any)
+       (message "-- advice 1")
+       ;; (dtk-stop 'all)
+       ;; (emacspeak-auditory-icon 'close-object)
        (when (eq major-mode 'emacspeak-transient-mode) (bury-buffer))
-       (emacspeak-speak-mode-line)))))
+       ;; (emacspeak-speak-mode-line)
+       ))))
 
 (cl-loop
  for f in
@@ -153,9 +158,11 @@
  (eval
   `(defadvice ,f (after emacspeak pre act comp)
      "speak."
-     (when (ems-interactive-p)
-       (emacspeak-auditory-icon 'save-object)
-       (dtk-stop 'all)))))
+     (when (called-interactively-p 'any)
+       (message "-- advice 2")
+       ;; (emacspeak-auditory-icon 'save-object)
+       ;; (dtk-stop 'all)
+       ))))
 
 (cl-loop
  for f in
@@ -164,19 +171,21 @@
  (eval
   `(defadvice ,f (after emacspeak pre act comp)
      "speak."
-     (when (ems-interactive-p)
-       (dtk-speak-list (minibuffer-contents))
-       (emacspeak-auditory-icon 'select-object)))))
+     (when (called-interactively-p 'any)
+       (message "-- advice 3")
+       ;; (dtk-speak-list (minibuffer-contents))
+       ;; (emacspeak-auditory-icon 'select-object)
+       ))))
 
 (define-derived-mode emacspeak-transient-mode special-mode
   "Browse current transient choices"
   "emacspeak integration with Transient."
   (cl-declare (special transient-sticky-map))
   (use-local-map transient-sticky-map)
-  (local-set-key (ems-kbd "M-n") 'emacspeak-transient-next-section)
-  (local-set-key (ems-kbd "M-p") 'emacspeak-transient-previous-section)
+  (local-set-key (kbd "M-n") 'emacspeak-transient-next-section)
+  (local-set-key (kbd "M-p") 'emacspeak-transient-previous-section)
   (local-set-key "q" 'bury-buffer)
-  (local-set-key (ems-kbd "C-c") 'transient-resume))
+  (local-set-key (kbd "C-c") 'transient-resume))
 
 (defvar emacspeak-transient-cache nil
   "Cache of the last Transient buffer contents.")
@@ -188,7 +197,9 @@
       (setq emacspeak-transient-cache
             (buffer-substring (point-min)  (point-max)))
       (when (sit-for 0.75)
-        (emacspeak-auditory-icon 'open-object)))))
+        ;; (emacspeak-auditory-icon 'open-object)
+        (message "-- speak open-object")
+        ))))
 
 (defadvice transient-suspend (around emacspeak pre act comp)
   "Pop to *Transient-emacspeak* buffer where the message emitted by
@@ -196,11 +207,11 @@ the transient can be browsed.
 Press `C-c' to resume the suspended transient."
   (cl-declare (special emacspeak-transient-cache))
   (cond
-   ((ems-interactive-p)
+   ((called-interactively-p 'any)
     (let ((buff (get-buffer-create "*Transient-Emacspeak*"))
           (inhibit-read-only t))
       ad-do-it
-      (emacspeak-auditory-icon 'close-object)
+      (message "-- speak close-object")
       (with-current-buffer buff
         (erase-buffer)
         (insert "C-c to resume, C-g to quit.\n\n")
@@ -208,7 +219,8 @@ Press `C-c' to resume the suspended transient."
         (goto-char (point-min))
         (emacspeak-transient-mode))
       (switch-to-buffer buff)
-      (emacspeak-speak-mode-line)))
+      ;; (emacspeak-speak-mode-line)
+      ))
    (t ad-do-it))
   ad-return-value)
 
@@ -247,10 +259,11 @@ Press `C-c' to resume the suspended transient."
 (defun emacspeak-transient-post-hook ()
   "Actions to execute after transient is done."
   (cl-declare (special transient--stack))
-  (unless transient--stack
-    (dtk-stop 'all)
-    (emacspeak-auditory-icon 'task-done)
-    (emacspeak-speak-mode-line)))
+  ;; (unless transient--stack
+  ;;   (dtk-stop 'all)
+  ;;   (emacspeak-auditory-icon 'task-done)
+  ;;   (emacspeak-speak-mode-line))
+  (message "-- hook emacspeak-transient-post-hook"))
 
 (add-hook 'transient-exit-hook 'emacspeak-transient-post-hook)
 ;;}}}
@@ -263,7 +276,7 @@ Press `C-c' to resume the suspended transient."
   `(defadvice ,f (around emacspeak pre act comp)
      "speak selected button"
      (cond
-      ((ems-interactive-p)
+      ((called-interactively-p 'any)
        ad-do-it
        (with-current-buffer (window-buffer transient--window)
          (when-let ((button (button-at (point)))
